@@ -37,7 +37,7 @@
         "name": "服务器2",
         "url": "https://your-server-2.com/status"
     }
-]```
+]
 
 ### 3. 配置监控端点
 
@@ -60,7 +60,7 @@ API 返回格式示例：
             "status": "running"
         }
     ]
-}```
+}
 
 ## 功能说明
 
