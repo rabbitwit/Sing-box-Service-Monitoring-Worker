@@ -28,7 +28,8 @@
 
 - `ADMIN_PASSWORD`: 管理员登录密码
 - `MONITOR_URLS`: 监控配置（JSON 格式），例如：
-```[
+```json
+[
     {
         "name": "服务器1",
         "url": "https://your-server-1.com/status"
@@ -37,7 +38,7 @@
         "name": "服务器2",
         "url": "https://your-server-2.com/status"
     }
-]```
+]
 
 ### 3. 配置监控端点
 
@@ -49,7 +50,8 @@
 - `/list`: 获取进程列表
 
 API 返回格式示例：
-```{
+```json
+{
     "services": [
         {
             "name": "sbx",
@@ -60,7 +62,7 @@ API 返回格式示例：
             "status": "running"
         }
     ]
-}```
+}
 
 ## 功能说明
 
