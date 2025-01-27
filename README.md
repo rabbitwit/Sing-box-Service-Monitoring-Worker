@@ -108,5 +108,5 @@ Hares
 
 1.0.0
 
-![Star History](https://starchart.cc/Hares/ggg.svg)  
+![Star History](https://api.star-history.com/svg?repos=rabbitwit/Sing-box-Service-Monitoring-Worker&type=Date)](https://star-history.com/#rabbitwit/Sing-box-Service-Monitoring-Worker&Date)
 *图示为该项目在GitHub上的星标增长趋势。通过此图可以了解社区对项目的关注程度和发展趋势。*
