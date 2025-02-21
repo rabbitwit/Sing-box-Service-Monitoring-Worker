@@ -13,6 +13,11 @@
 - 🔄 自动刷新状态
 - 🌐 支持跨域请求
 
+## 限制说明
+
+- 由于脚本作者在创建保活域名时采用了https协议, Cloudflare Workers使用fetch API时会报错, 所以目前只能使用http协议, 可以到面板中将保活域名的Force SSL选项关闭.
+- 或者对保活域名申请SSL证书, 并将保活域名的Force SSL选项开启.
+
 ## 使用方法
 
 ### 1. 部署到 Cloudflare Workers
@@ -21,6 +26,7 @@
 2. 进入 Workers & Pages
 3. 创建新的 Worker
 4. 将 `_worker.js` 代码复制到 Worker 编辑器中
+5. 在触发事件里按需设置检查间隔, 不设置的话则不会自动检查状态
 
 ### 2. 配置环境变量
 
@@ -106,8 +112,4 @@ Hares
 
 ## 版本
 
-1.0.0
-
-[![Star History](https://api.star-history.com/svg?repos=rabbitwit/Sing-box-Service-Monitoring-Worker&type=Date)](https://star-history.com/#rabbitwit/Sing-box-Service-Monitoring-Worker&Date)
-
-*图示为该项目在GitHub上的星标增长趋势。通过此图可以了解社区对项目的关注程度和发展趋势。*
+1.0.1

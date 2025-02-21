@@ -1,32 +1,79 @@
 /**
  * Service Status Monitor
- * 
+ *
  * @description 服务状态监控面板
- * @version 1.0.0
+ * @version 1.0.1
  * @author hares
  * @copyright 2024 hares. All rights reserved.
  * @license MIT
  */
 
+async function getServiceStatus(urls) {
+  try {
+    const monitorList = JSON.parse(urls)
+
+    // 获取所有链接的数据
+    return await Promise.all(
+        monitorList.map(async item => {
+          try {
+            const response = await fetch(item.url);
+            if (!response.ok) {
+              return {
+                name: item.name,
+                url: item.url,
+                error: `HTTP ${response.status}`,
+                services: [],
+                monitoring: 'ERROR'
+              };
+            }
+            const data = await response.json();
+            return {...data, name: item.name, url: item.url};
+          } catch (error) {
+            return {
+              name: item.name,
+              url: item.url,
+              error: error.message,
+              services: [],
+              monitoring: 'ERROR'
+            };
+          }
+        })
+    );
+  } catch (error) {
+    console.error(error);
+    return {
+      error: error.message,
+      services: [],
+      monitoring: 'ERROR'
+    }
+  }
+}
+
 addEventListener('fetch', event => {
-  event.respondWith(handleRequest(event.request))
-})
+  event.respondWith(handleRequest(event.request));
+});
+
+// 处理 Trigger Events
+addEventListener('scheduled', event => {
+  event.waitUntil(checkServiceStatus());
+});
 
 async function handleRequest(request) {
   try {
-    // 检查是否已登录
     const url = new URL(request.url);
+
+    // 检查是否已登录
     const cookie = request.headers.get('Cookie') || '';
     const isAdmin = cookie.includes('isAdmin=true');
-    
+
     // 处理登录请求
     if (url.pathname === '/login') {
       const formData = await request.formData();
       const password = formData.get('password');
-      
+
       // 从环境变量获取正确的密码
       const correctPassword = ADMIN_PASSWORD;
-      
+
       if (password === correctPassword) {
         return new Response('登录成功', {
           status: 200,
@@ -40,39 +87,13 @@ async function handleRequest(request) {
       }
     }
 
-    // 从环境变量获取监控链接，解析 JSON
-    const monitorList = JSON.parse(MONITOR_URLS)
-    
-    // 获取所有链接的数据
-    const responses = await Promise.all(
-      monitorList.map(async item => {
-        try {
-          const response = await fetch(item.url);
-          if (!response.ok) {
-            return {
-              name: item.name,
-              url: item.url,
-              error: `HTTP ${response.status}`,
-              services: [],
-              monitoring: 'ERROR'
-            };
-          }
-          const data = await response.json();
-          return { ...data, name: item.name, url: item.url };
-        } catch (error) {
-          return {
-            name: item.name,
-            url: item.url,
-            error: error.message,
-            services: [],
-            monitoring: 'ERROR'
-          };
-        }
-      })
-    )
+    const responses = await getServiceStatus(MONITOR_URLS);
 
+    if (!Array.isArray(responses)) {
+      return new Response('Service status check failed', { status: 500 });
+    }
     // 生成HTML表格
-    const tableRows = responses.map((data) => {
+    responses.map((data) => {
       if (data.error) {
         return `
           <tr>
@@ -81,7 +102,7 @@ async function handleRequest(request) {
           </tr>
         `;
       }
-      
+
       const getStatusText = (status) => {
         switch(status.toLowerCase()) {
           case 'running': return '正常';
@@ -111,7 +132,7 @@ async function handleRequest(request) {
 
       const url = new URL(request.url);
       const targetUrl = url.searchParams.get('url');
-      
+
       // 处理 OPTIONS 预检请求
       if (request.method === 'OPTIONS') {
         return new Response(null, {
@@ -123,7 +144,7 @@ async function handleRequest(request) {
           },
         });
       }
-      
+
       try {
         const response = await fetch(targetUrl);
         return new Response(response.body, {
@@ -133,7 +154,7 @@ async function handleRequest(request) {
           },
         });
       } catch (error) {
-        return new Response('Error: ' + error.message, { 
+        return new Response('Error: ' + error.message, {
           status: 500,
           headers: {
             'Access-Control-Allow-Origin': '*'
@@ -388,7 +409,7 @@ async function handleRequest(request) {
             // 点击模态框外部关闭
             window.onclick = function(event) {
               const modal = document.getElementById('processModal');
-              if (event.target == modal) {
+              if (event.target === modal) {
                 modal.style.display = 'none';
               }
             }
@@ -441,27 +462,27 @@ async function handleRequest(request) {
             </thead>
             <tbody>
               ${responses.map((data) => {
-                if (data.error) {
-                  return `
+      if (data.error) {
+        return `
                     <tr>
                       <td>${data.name}</td>
                       <td colspan="${isAdmin ? 3 : 2}" class="status-stopped">错误: ${data.error}</td>
                     </tr>
                   `;
-                }
-                
-                const getStatusText = (status) => {
-                  switch(status.toLowerCase()) {
-                    case 'running': return '正常';
-                    case 'stopped': return '停止';
-                    default: return '-';
-                  }
-                };
+      }
 
-                const sbxService = data.services.find(s => s.name === 'sbx') || { status: '-' };
-                const argoService = data.services.find(s => s.name === 'argo') || { status: '-' };
+      const getStatusText = (status) => {
+        switch(status.toLowerCase()) {
+          case 'running': return '正常';
+          case 'stopped': return '停止';
+          default: return '-';
+        }
+      };
 
-                return `
+      const sbxService = data.services.find(s => s.name === 'sbx') || { status: '-' };
+      const argoService = data.services.find(s => s.name === 'argo') || { status: '-' };
+
+      return `
                   <tr>
                     <td>${data.name}</td>
                     <td class="status-${sbxService.status.toLowerCase()}">${getStatusText(sbxService.status)}</td>
@@ -475,7 +496,7 @@ async function handleRequest(request) {
                     ` : ''}
                   </tr>
                 `;
-              }).join('')}
+    }).join('')}
             </tbody>
           </table>
 
@@ -504,5 +525,34 @@ async function handleRequest(request) {
     })
   } catch (error) {
     return new Response('Error: ' + error.message, { status: 500 })
+  }
+}
+
+// 检查服务状态
+async function checkServiceStatus() {
+  try {
+    const responses = await getServiceStatus(MONITOR_URLS);
+
+    if (!Array.isArray(responses)) {
+      return new Response('Service status check failed', { status: 500 });
+    }
+
+    // 检查服务状态并调用 start 操作
+    for (const data of responses) {
+      const sbxService = data.services.find(s => s.name === 'sbx') || { status: '-' };
+      const argoService = data.services.find(s => s.name === 'argo') || { status: '-' };
+
+      if (sbxService.status.toLowerCase() !== 'running') {
+        await fetch(`${data.url}/start`); // 调用 start 操作
+      }
+      if (argoService.status.toLowerCase() !== 'running') {
+        await fetch(`${data.url}/start`); // 调用 start 操作
+      }
+    }
+
+    return new Response('Status check completed', { status: 200 });
+
+  } catch (error) {
+    return new Response(error.message, { status: 500 });
   }
 }
